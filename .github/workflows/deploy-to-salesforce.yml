@@ -1,0 +1,40 @@
+name: Deploy to Salesforce
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    
+    steps:
+      # Checkout the code
+      - name: Checkout code
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+      
+      # Install Salesforce CLI
+      - name: Install Salesforce CLI
+        run: |
+          npm install -g @salesforce/cli
+          sf version
+      
+      # Authenticate to Salesforce using JWT
+      - name: Authenticate to Salesforce
+        run: |
+          echo "${{ secrets.SF_JWT_KEY }}" > server.key
+          sf org login jwt --client-id ${{ secrets.SF_CLIENT_ID }} --jwt-key-file server.key --username ${{ secrets.SF_USERNAME }} --instance-url ${{ secrets.SF_INSTANCE_URL }} --set-default --alias production
+          rm server.key
+      
+      # Deploy to Salesforce
+      - name: Deploy to Salesforce
+        run: |
+          sf project deploy start --target-org production --wait 30
+      
+      # Run tests (optional but recommended)
+      - name: Run Apex Tests
+        run: |
+          sf apex run test --target-org production --wait 10 --result-format human --code-coverage --test-level RunLocalTests
