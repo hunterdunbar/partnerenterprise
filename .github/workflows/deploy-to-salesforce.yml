@@ -31,7 +31,7 @@ jobs:
       - name: Authenticate to Sandbox
         run: |
           echo "${{ secrets.SF_JWT_KEY_SANDBOX }}" > server.key
-          sf org login jwt --client-id ${{ secrets.SF_CLIENT_ID_SANDBOX }} --jwt-key-file server.key --username ${{ secrets.SF_SANDBOX_USERNAME }} --instance-url https://test.salesforce.com --set-default --alias sandbox
+          sf org login jwt --client-id ${{ secrets.SF_CLIENT_ID_SANDBOX }} --jwt-key-file server.key --username ${{ secrets.SF_SANDBOX_USERNAME }} --instance-url ${{ secrets.SF_INSTANCE_URL_SANDBOX }} --set-default --alias sandbox
           rm server.key
       
       - name: Validate Deployment
