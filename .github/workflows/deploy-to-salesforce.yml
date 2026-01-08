@@ -54,8 +54,8 @@ jobs:
       
       - name: Authenticate to Production
         run: |
-          echo "${{ secrets.SF_JWT_KEY_PROD }}" > server.key
-          sf org login jwt --client-id ${{ secrets.SF_CLIENT_ID_PROD }} --jwt-key-file server.key --username ${{ secrets.SF_USERNAME }} --instance-url ${{ secrets.SF_INSTANCE_URL }} --set-default --alias production
+          echo "${{ secrets.SF_JWT_KEY }}" > server.key
+          sf org login jwt --client-id ${{ secrets.SF_CLIENT_ID }} --jwt-key-file server.key --username ${{ secrets.SF_USERNAME }} --instance-url ${{ secrets.SF_INSTANCE_URL }} --set-default --alias production
           rm server.key
       
       - name: Deploy to Production
