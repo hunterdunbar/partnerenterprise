@@ -1,5 +1,5 @@
 @isTest
-public class SampleClassTest{
+public class SampleClass_Test{
 
     static testMethod void testSampleClass(){
         SampleClass sampleClass = new SampleClass();
