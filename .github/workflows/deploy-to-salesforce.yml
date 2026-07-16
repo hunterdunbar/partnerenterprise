@@ -71,6 +71,29 @@ jobs:
             -in "$KEY_FILE" \
             -check \
             -noout
+          
+          echo "Client ID length: ${#SF_CLIENT_ID}"
+          echo "Username length: ${#SF_USERNAME}"
+          echo "Instance URL length: ${#SF_INSTANCE_URL}"
+
+          printf '%s' "$SF_CLIENT_ID" |
+            sha256sum |
+            awk '{print "Client ID SHA-256: " $1}'
+
+          printf '%s' "$SF_USERNAME" |
+            sha256sum |
+            awk '{print "Username SHA-256: " $1}'
+
+          printf '%s' "$SF_INSTANCE_URL" |
+            sha256sum |
+            awk '{print "Instance URL SHA-256: " $1}'
+
+          openssl pkey \
+            -in "$KEY_FILE" \
+            -pubout \
+            -outform DER |
+            sha256sum |
+            awk '{print "Public key SHA-256: " $1}'
 
           sf org login jwt \
             --client-id "$SF_CLIENT_ID" \
