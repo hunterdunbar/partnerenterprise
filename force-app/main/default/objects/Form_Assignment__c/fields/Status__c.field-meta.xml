@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>Status__c</fullName>
+    <label>Status</label>
+    <type>Picklist</type>
+    <required>true</required>
+    <valueSet>
+        <restricted>true</restricted>
+        <valueSetDefinition>
+        <value>
+        <fullName>To Do</fullName>
+        <default>false</default>
+        <label>To Do</label>
+    </value>
+<value>
+        <fullName>Doing</fullName>
+        <default>false</default>
+        <label>Doing</label>
+    </value>
+<value>
+        <fullName>Done</fullName>
+        <default>false</default>
+        <label>Done</label>
+    </value>
+<value>
+        <fullName>Waived</fullName>
+        <default>false</default>
+        <label>Waived</label>
+    </value>
+        </valueSetDefinition>
+    </valueSet>
+</CustomField>

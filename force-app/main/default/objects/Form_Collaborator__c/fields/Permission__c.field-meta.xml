@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>Permission__c</fullName>
+    <label>Permission</label>
+    <type>Picklist</type>
+    <required>true</required>
+    <valueSet>
+        <restricted>true</restricted>
+        <valueSetDefinition>
+        <value>
+        <fullName>View</fullName>
+        <default>false</default>
+        <label>View</label>
+    </value>
+<value>
+        <fullName>Edit</fullName>
+        <default>false</default>
+        <label>Edit</label>
+    </value>
+        </valueSetDefinition>
+    </valueSet>
+</CustomField>

@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>Invited_By__c</fullName>
+    <label>Invited By</label>
+    <type>Lookup</type>
+    <referenceTo>User</referenceTo>
+    <relationshipLabel>Invited Collaborators</relationshipLabel>
+    <relationshipName>InvitedCollaborators</relationshipName>
+    <required>false</required>
+</CustomField>

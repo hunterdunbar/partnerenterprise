@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>When__c</fullName>
+    <label>When</label>
+    <type>Picklist</type>
+    <required>true</required>
+    <valueSet>
+        <restricted>true</restricted>
+        <valueSetDefinition>
+        <value>
+        <fullName>OnSubmit</fullName>
+        <default>false</default>
+        <label>OnSubmit</label>
+    </value>
+<value>
+        <fullName>OnDraftSave</fullName>
+        <default>false</default>
+        <label>OnDraftSave</label>
+    </value>
+        </valueSetDefinition>
+    </valueSet>
+</CustomField>
