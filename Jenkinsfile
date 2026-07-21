@@ -12,6 +12,7 @@ pipeline {
     }
 
     environment {
+        PATH = "/opt/homebrew/bin:/usr/local/bin:${env.PATH}"
         SF_DISABLE_TELEMETRY = 'true'
         SF_USE_GENERIC_UNIX_KEYCHAIN = 'true'
         DEPLOY_MANIFEST = 'manifest/package.xml'
@@ -94,19 +95,19 @@ pipeline {
                         integration: [
                             usernameCredential: 'sf-int-username',
                             clientCredential:   'sf-int-client-id',
-                            instanceUrl:         'https://ka-pc-consent--int.sandbox.my.salesforce.com/',
+                            instanceUrl:         'https://ka-pc-consent--int.sandbox.my.salesforce.com',
                             alias:               'devops-integration'
                         ],
                         preprod: [
                             usernameCredential: 'sf-staging-username',
                             clientCredential:   'sf-staging-client-id',
-                            instanceUrl:         'https://ka-pc-consent--staging.sandbox.my.salesforce.com/',
+                            instanceUrl:         'https://ka-pc-consent--staging.sandbox.my.salesforce.com',
                             alias:               'devops-preprod'
                         ],
                         production: [
                             usernameCredential: 'sf-prod-username',
                             clientCredential:   'sf-prod-client-id',
-                            instanceUrl:         'https://ka-pc-consent.my.salesforce.com/',
+                            instanceUrl:         'https://ka-pc-consent.my.salesforce.com',
                             alias:               'devops-production'
                         ]
                     ]
