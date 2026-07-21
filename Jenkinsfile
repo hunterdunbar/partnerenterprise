@@ -98,18 +98,21 @@ pipeline {
                         integration: [
                             usernameCredential: 'sf-int-username',
                             clientCredential:   'sf-int-client-id',
+                            jwtCredential:      'sf-jwt-key-int',
                             instanceUrl:         'https://ka-pc-consent--int.sandbox.my.salesforce.com',
                             alias:               'devops-integration'
                         ],
                         preprod: [
                             usernameCredential: 'sf-staging-username',
                             clientCredential:   'sf-staging-client-id',
+                            jwtCredential:      'sf-jwt-key-staging',
                             instanceUrl:         'https://ka-pc-consent--staging.sandbox.my.salesforce.com',
                             alias:               'devops-preprod'
                         ],
                         production: [
                             usernameCredential: 'sf-prod-username',
                             clientCredential:   'sf-prod-client-id',
+                            jwtCredential:      'sf-jwt-key-prod',
                             instanceUrl:         'https://ka-pc-consent.my.salesforce.com',
                             alias:               'devops-production'
                         ]
@@ -126,7 +129,7 @@ pipeline {
 
                     withCredentials([
                         file(
-                            credentialsId: 'sf-jwt-key',
+                            credentialsId: target.jwtCredential,
                             variable: 'SF_JWT_KEY_FILE'
                         ),
                         string(
