@@ -5,64 +5,163 @@ on:
     branches:
       - main
       - develop
-      - 'release/**'
-      - 'hotfix/**'
+      - "release/**"
+      - "hotfix/**"
   pull_request:
     branches:
       - main
       - develop
 
 jobs:
-  # Validate on Pull Requests (no deployment)
+  # Validate on Pull Requests without deploying
   validate:
     if: github.event_name == 'pull_request'
     runs-on: ubuntu-latest
+
     steps:
       - name: Checkout code
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         with:
           fetch-depth: 0
-      
+
       - name: Install Salesforce CLI
         run: |
-          npm install -g @salesforce/cli
+          npm install --global @salesforce/cli
           sf version
-      
+
       - name: Authenticate to Sandbox
+        shell: bash
+        env:
+          SF_CLIENT_ID: ${{ secrets.SF_CLIENT_ID_SANDBOX }}
+          SF_USERNAME: ${{ secrets.SF_USERNAME_SANDBOX }}
+          SF_INSTANCE_URL: ${{ secrets.SF_INSTANCE_URL_SANDBOX }}
+          SF_JWT_KEY: ${{ secrets.SF_JWT_KEY_SANDBOX }}
         run: |
-          echo "${{ secrets.SF_JWT_KEY_SANDBOX }}" > server.key
-          sf org login jwt --client-id ${{ secrets.SF_CLIENT_ID_SANDBOX }} --jwt-key-file server.key --username ${{ secrets.SF_SANDBOX_USERNAME }} --instance-url ${{ secrets.SF_INSTANCE_URL_SANDBOX }} --set-default --alias sandbox
-          rm server.key
-      
+          set -euo pipefail
+
+          KEY_FILE="$(mktemp)"
+          trap 'rm -f "$KEY_FILE"' EXIT
+
+          printf '%s\n' "$SF_JWT_KEY" > "$KEY_FILE"
+          chmod 600 "$KEY_FILE"
+
+          echo "Checking required secrets..."
+          test -n "$SF_CLIENT_ID" || {
+            echo "SF_CLIENT_ID_SANDBOX is empty"
+            exit 1
+          }
+
+          test -n "$SF_USERNAME" || {
+            echo "SF_USERNAME_SANDBOX is empty"
+            exit 1
+          }
+
+          test -n "$SF_INSTANCE_URL" || {
+            echo "SF_INSTANCE_URL_SANDBOX is empty"
+            exit 1
+          }
+
+          test -s "$KEY_FILE" || {
+            echo "SF_JWT_KEY_SANDBOX is empty"
+            exit 1
+          }
+
+          echo "Checking private key..."
+          openssl pkey \
+            -in "$KEY_FILE" \
+            -check \
+            -noout
+          
+          echo "Client ID length: ${#SF_CLIENT_ID}"
+          echo "Username length: ${#SF_USERNAME}"
+          echo "Instance URL length: ${#SF_INSTANCE_URL}"
+
+          printf '%s' "$SF_CLIENT_ID" |
+            sha256sum |
+            awk '{print "Client ID SHA-256: " $1}'
+
+          printf '%s' "$SF_USERNAME" |
+            sha256sum |
+            awk '{print "Username SHA-256: " $1}'
+
+          printf '%s' "$SF_INSTANCE_URL" |
+            sha256sum |
+            awk '{print "Instance URL SHA-256: " $1}'
+
+          openssl pkey \
+            -in "$KEY_FILE" \
+            -pubout \
+            -outform DER |
+            sha256sum |
+            awk '{print "Public key SHA-256: " $1}'
+
+          sf org login jwt \
+            --client-id "$SF_CLIENT_ID" \
+            --jwt-key-file "$KEY_FILE" \
+            --username "$SF_USERNAME" \
+            --instance-url "$SF_INSTANCE_URL" \
+            --set-default \
+            --alias sandbox
+
       - name: Validate Deployment
         run: |
-          sf project deploy validate --source-dir force-app/main/default --target-org sandbox --test-level RunLocalTests
+          sf project deploy validate \
+            --source-dir force-app/main/default \
+            --target-org sandbox \
+            --test-level RunLocalTests
 
-  # Deploy to Production (main branch only)
+  # Deploy to Production from main
   deploy-production:
     if: github.ref == 'refs/heads/main' && github.event_name == 'push'
     runs-on: ubuntu-latest
-    environment: production  # Can add manual approval here
+    environment: production
+
     steps:
       - name: Checkout code
-        uses: actions/checkout@v3
-      
+        uses: actions/checkout@v4
+
       - name: Install Salesforce CLI
         run: |
-          npm install -g @salesforce/cli
+          npm install --global @salesforce/cli
           sf version
-      
+
       - name: Authenticate to Production
+        shell: bash
+        env:
+          SF_CLIENT_ID: ${{ secrets.SF_CLIENT_ID }}
+          SF_USERNAME: ${{ secrets.SF_USERNAME }}
+          SF_INSTANCE_URL: ${{ secrets.SF_INSTANCE_URL }}
+          SF_JWT_KEY: ${{ secrets.SF_JWT_KEY }}
         run: |
-          echo "${{ secrets.SF_JWT_KEY }}" > server.key
-          sf org login jwt --client-id ${{ secrets.SF_CLIENT_ID }} --jwt-key-file server.key --username ${{ secrets.SF_USERNAME }} --instance-url ${{ secrets.SF_INSTANCE_URL }} --set-default --alias production
-          rm server.key
-      
+          set -euo pipefail
+
+          KEY_FILE="$(mktemp)"
+          trap 'rm -f "$KEY_FILE"' EXIT
+
+          printf '%s\n' "$SF_JWT_KEY" > "$KEY_FILE"
+          chmod 600 "$KEY_FILE"
+
+          openssl pkey \
+            -in "$KEY_FILE" \
+            -check \
+            -noout
+
+          sf org login jwt \
+            --client-id "$SF_CLIENT_ID" \
+            --jwt-key-file "$KEY_FILE" \
+            --username "$SF_USERNAME" \
+            --instance-url "$SF_INSTANCE_URL" \
+            --set-default \
+            --alias production
+
       - name: Deploy to Production
         run: |
-          sf project deploy start --target-org production --wait 30 --test-level RunLocalTests
+          sf project deploy start \
+            --target-org production \
+            --wait 30 \
+            --test-level RunLocalTests
 
-  # Deploy to Sandbox (develop, release, and hotfix branches)
+  # Deploy to Sandbox from develop, release, and hotfix branches
   deploy-sandbox:
     if: |
       github.event_name == 'push' && (
@@ -71,25 +170,51 @@ jobs:
         startsWith(github.ref, 'refs/heads/hotfix/')
       )
     runs-on: ubuntu-latest
+
     steps:
       - name: Checkout code
-        uses: actions/checkout@v3
-      
+        uses: actions/checkout@v4
+
       - name: Install Salesforce CLI
         run: |
-          npm install -g @salesforce/cli
+          npm install --global @salesforce/cli
           sf version
-      
+
       - name: Authenticate to Sandbox
+        shell: bash
+        env:
+          SF_CLIENT_ID: ${{ secrets.SF_CLIENT_ID_SANDBOX }}
+          SF_USERNAME: ${{ secrets.SF_USERNAME_SANDBOX }}
+          SF_INSTANCE_URL: ${{ secrets.SF_INSTANCE_URL_SANDBOX }}
+          SF_JWT_KEY: ${{ secrets.SF_JWT_KEY_SANDBOX }}
         run: |
-          echo "${{ secrets.SF_JWT_KEY_SANDBOX }}" > server.key
-          sf org login jwt --client-id ${{ secrets.SF_CLIENT_ID_SANDBOX }} --jwt-key-file server.key --username ${{ secrets.SF_USERNAME_SANDBOX }} --instance-url ${{ secrets.SF_INSTANCE_URL_SANDBOX }} --set-default --alias sandbox
-          rm server.key
-      
+          set -euo pipefail
+
+          KEY_FILE="$(mktemp)"
+          trap 'rm -f "$KEY_FILE"' EXIT
+
+          printf '%s\n' "$SF_JWT_KEY" > "$KEY_FILE"
+          chmod 600 "$KEY_FILE"
+
+          openssl pkey \
+            -in "$KEY_FILE" \
+            -check \
+            -noout
+
+          sf org login jwt \
+            --client-id "$SF_CLIENT_ID" \
+            --jwt-key-file "$KEY_FILE" \
+            --username "$SF_USERNAME" \
+            --instance-url "$SF_INSTANCE_URL" \
+            --set-default \
+            --alias sandbox
+
       - name: Deploy to Sandbox
         run: |
-          sf project deploy start --target-org sandbox --wait 30
-      
+          sf project deploy start \
+            --target-org sandbox \
+            --wait 30
+
       - name: Add deployment note
         run: |
           echo "Deployed branch: ${{ github.ref_name }}"
