@@ -12,6 +12,7 @@ pipeline {
     }
 
     environment {
+        PATH = "/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin:${env.PATH}"        
         SF_DISABLE_TELEMETRY = 'true'
         SF_USE_GENERIC_UNIX_KEYCHAIN = 'true'
         DEPLOY_MANIFEST = 'manifest/package.xml'
@@ -23,11 +24,14 @@ pipeline {
             steps {
                 deleteDir()
                 checkout scm
-
                 sh '''
                     set -eu
-                    echo "Commit: ${GIT_COMMIT}"
-                    echo "Branch: ${BRANCH_NAME}"
+                    COMMIT_SHA="$(git rev-parse HEAD)"
+                    echo "Commit: ${COMMIT_SHA}"
+                    echo "Branch: ${BRANCH_NAME:-unknown}"
+                    echo "PATH: ${PATH}"
+                    command -v git
+                    command -v sf
                     sf version
                 '''
             }
@@ -94,19 +98,19 @@ pipeline {
                         integration: [
                             usernameCredential: 'sf-int-username',
                             clientCredential:   'sf-int-client-id',
-                            instanceUrl:         'https://ka-pc-consent--int.sandbox.my.salesforce.com/',
+                            instanceUrl:         'https://ka-pc-consent--int.sandbox.my.salesforce.com',
                             alias:               'devops-integration'
                         ],
                         preprod: [
                             usernameCredential: 'sf-staging-username',
                             clientCredential:   'sf-staging-client-id',
-                            instanceUrl:         'https://ka-pc-consent--staging.sandbox.my.salesforce.com/',
+                            instanceUrl:         'https://ka-pc-consent--staging.sandbox.my.salesforce.com',
                             alias:               'devops-preprod'
                         ],
                         production: [
                             usernameCredential: 'sf-prod-username',
                             clientCredential:   'sf-prod-client-id',
-                            instanceUrl:         'https://ka-pc-consent.my.salesforce.com/',
+                            instanceUrl:         'https://ka-pc-consent.my.salesforce.com',
                             alias:               'devops-production'
                         ]
                     ]
@@ -251,30 +255,34 @@ pipeline {
                 testResults: 'test-results/**/*.xml',
                 allowEmptyResults: true
             )
-
             archiveArtifacts(
                 artifacts: 'test-results/**/*',
                 allowEmptyArchive: true,
                 fingerprint: true
             )
-
             sh '''
                 set +e
-                sf org logout \
-                    --target-org "${SF_ORG_ALIAS:-}" \
-                    --no-prompt
+                if command -v sf >/dev/null 2>&1 && [ -n "${SF_ORG_ALIAS:-}" ]; then
+                    sf org logout \
+                        --target-org "$SF_ORG_ALIAS" \
+                        --no-prompt
+                fi
                 rm -rf .sf
             '''
-
             deleteDir()
         }
 
         success {
-            echo "Salesforce pipeline completed successfully."
+
+            echo 'Salesforce pipeline completed successfully.'
+
         }
 
         failure {
-            echo "Salesforce pipeline failed. Review the deployment and Apex test results."
+
+            echo 'Salesforce pipeline failed. Review the deployment and Apex test results.'
+
         }
+
     }
 }
